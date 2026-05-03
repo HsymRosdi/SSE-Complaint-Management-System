@@ -16,4 +16,12 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-console.log("Using Firebase project:", firebaseConfig.projectId);
+// SECURITY FIX
+// Weakness ID: W5
+// Fix ID: F5 - Remove Firebase project ID from console log
+// STRIDE: Information Disclosure
+// OWASP: A09 Security Logging and Monitoring Failures
+// CWE: CWE-532
+// CIA: Confidentiality
+// ASVS: V7.1 - Log Content
+// D3FEND: D3-AL Application Layer Logging
