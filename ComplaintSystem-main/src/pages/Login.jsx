@@ -10,23 +10,54 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+// SECURITY FIX
+// Weakness ID: W3
+// Fix ID: F3 - Add rate limiting and lockout on login form
+// STRIDE: Spoofing
+// OWASP: A07 Identification and Authentication Failures
+// CWE: CWE-307
+// CIA: Confidentiality, Availability
+// ASVS: V2.1 - Authentication
+// D3FEND: D3-RLC Rate Limiting Communications
 
-    try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
-      navigate("/dashboard");
-    } catch (err) {
-      if (err.code === "auth/invalid-credential") setError("Wrong email or password.");
-      else if (err.code === "auth/user-not-found") setError("No account found with this email.");
-      else if (err.code === "auth/wrong-password") setError("Wrong password.");
-      else setError(err.message);
-    } finally {
-      setLoading(false);
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_DURATION = 5 * 60 * 1000;
+
+  const [attempts, setAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState(null);
+
+  const handleLogin = async (e) => {
+  e.preventDefault();
+  setError("");
+
+  if (lockedUntil && Date.now() < lockedUntil) {
+    const remaining = Math.ceil((lockedUntil - Date.now()) / 1000);
+    setError(`Too many attempts. Please wait ${remaining} seconds.`);
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    await signInWithEmailAndPassword(auth, email.trim(), password);
+    setAttempts(0);
+    setLockedUntil(null);
+    navigate("/dashboard");
+  } catch (err) {
+    const newAttempts = attempts + 1;
+    setAttempts(newAttempts);
+
+    if (newAttempts >= MAX_ATTEMPTS) {
+      setLockedUntil(Date.now() + LOCKOUT_DURATION);
+      setError("Too many failed attempts. Account locked for 5 minutes.");
+    } else {
+      setError(`Wrong email or password. ${MAX_ATTEMPTS - newAttempts} attempts remaining.`);
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
+// ------------------------------------------------------------------------------------------------------
 
   return (
     <div
