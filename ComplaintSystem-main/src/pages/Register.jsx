@@ -8,7 +8,16 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [sector, setSector] = useState("Bank");
-  const [role, setRole] = useState("consumer");
+// SECURITY FIX
+// Weakness ID: W1
+// Fix ID: F1 - Remove self-assigned role at registration
+// STRIDE: Elevation of Privilege
+// OWASP: A01 Broken Access Control
+// CWE: CWE-269
+// CIA: Integrity
+// ASVS: V8.1 - Authorization
+// D3FEND: D3-UAP User Account Permissions
+  const FIXED_ROLE = ("consumer");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +38,7 @@ export default function Register() {
 
       await setDoc(doc(db, "users", uid), {
         email: email.trim(),
-        role,
+        role: FIXED_ROLE,
         sector,
         tenantId: sector,
         createdAt: serverTimestamp(),
