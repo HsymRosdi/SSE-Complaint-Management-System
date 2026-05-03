@@ -28,10 +28,44 @@ export default function NewComplaint() {
     e.preventDefault();
     setError("");
 
-    if (!title.trim() || !description.trim()) {
-      setError("Title and Description are required.");
-      return;
-    }
+// SECURITY FIX
+// Weakness ID: W2
+// Fix ID: F2 - Add input validation and sanitisation on complaint form
+// STRIDE: Tampering
+// OWASP: A03 Injection
+// CWE: CWE-79, CWE-20
+// CIA: Integrity
+// ASVS: V5.1 - Input Validation
+// D3FEND: D3-IVAR Input Validation
+
+const sanitiseInput = (input) => {
+  return input
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;")
+    .replace(/\//g, "&#x2F;");
+};
+
+const MAX_TITLE_LENGTH = 100;
+const MAX_DESC_LENGTH = 1000;
+
+if (!title.trim() || !description.trim()) {
+  setError("Title and Description are required.");
+  return;
+}
+if (title.trim().length > MAX_TITLE_LENGTH) {
+  setError("Title must be under 100 characters.");
+  return;
+}
+if (description.trim().length > MAX_DESC_LENGTH) {
+  setError("Description must be under 1000 characters.");
+  return;
+}
+
+const sanitisedTitle = sanitiseInput(title.trim());
+const sanitisedDescription = sanitiseInput(description.trim());
+// ------------------------------------------------------------------
     if (!auth.currentUser) {
       setError("You are not logged in.");
       return;
@@ -49,8 +83,10 @@ export default function NewComplaint() {
         sector: userData.sector,
         createdByUid: auth.currentUser.uid,
         createdByEmail: auth.currentUser.email,
-        title: title.trim(),
-        description: description.trim(),
+        //--------------------------
+        title: sanitisedTitle,
+        description: sanitisedDescription,
+        //---------------------------------
         status: "New",
         assignedToUid: null,
         assignedToEmail: null,
